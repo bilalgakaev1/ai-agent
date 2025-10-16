@@ -14,7 +14,7 @@
       block.classList.add('active');
     }
 
-    // UUID + sessionId
+    
     function generateUUID() {
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
         const r = Math.random() * 16 | 0;
@@ -35,7 +35,7 @@
       }
     }
 
-    // UI helpers
+    
     function setLoadingState(active) {
       startBtn.disabled = active;
       queryInput.disabled = active;
@@ -47,7 +47,7 @@
         resultsDiv.innerHTML = "<p>Ничего не найдено 😕</p>";
       } else {
         resultsDiv.innerHTML = items.map(v => {
-          // в зависимости от структуры объекта выводим максимально полезную информацию
+          
           const title = v.title || v.name || v.message || v.text || '';
           const url = v.url || v.link || '';
           const meta = v.channel || v.source || v.description || '';
@@ -67,7 +67,7 @@
         <div class="error-box">
           <strong>Произошла ошибка${code ? ' ('+code+')' : ''}.</strong>
           <div style="margin-top:8px;">${escapeHtml(message)}</div>
-          <div class="hint">Если проблема связана с доступностью сервиса, попросите бэкенд включить workflow в n8n (активировать webhook) и повторите попытку.</div>
+          <div class="hint">Запрос занял слишком много времени. Попробуйте ещё раз.</div>
           <div style="margin-top:8px;">
             <button id="ai-retry-btn">Повторить</button>
             <button id="ai-newsearch-err" style="margin-left:8px;">Новый запрос</button>
@@ -75,7 +75,7 @@
         </div>`;
       showBlock(resultsBlock);
 
-      // attach retry handlers
+      
       const retry = document.getElementById('ai-retry-btn');
       const newsearchErr = document.getElementById('ai-newsearch-err');
       if (retry) retry.addEventListener('click', () => {
@@ -88,7 +88,7 @@
       });
     }
 
-    // escape helpers to avoid XSS when rendering raw server data
+    
     function escapeHtml(str) {
       if (!str && str !== 0) return '';
       return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[s]));
@@ -125,35 +125,35 @@
         clearTimeout(timer);
 
         if (!res.ok) {
-          // специфичные сообщения для 404 и 500
+          
           const status = res.status;
           let bodyText = '';
           try { bodyText = await res.text(); } catch(e){ bodyText = ''; }
           console.warn('Server error:', status, bodyText);
           if (status === 404) {
-            renderError('Webhook не зарегистрирован или workflow в n8n не активен. Попросите бекендера включить workflow (toggle "Active") в n8n.', 404);
+            renderError('Сервис временно недоступен. Попробуйте позже.', 404);
             return;
           }
           if (status === 500) {
-            renderError('Внутренняя ошибка сервера. Попросите бекендера проверить логи n8n и трассировки.', 500);
+            renderError('Произошла внутренняя ошибка. Повторите попытку позже.', 500);
             return;
           }
           renderError('Ошибка сервера: ' + (bodyText || `HTTP ${status}`), status);
           return;
         }
 
-        // OK — парсим JSON
+        
         let data;
         try {
           data = await res.json();
         } catch (e) {
-          // если не JSON — покажем тело как текст
+          
           const txt = await res.text().catch(()=>'');
           renderError('Сервер вернул некорректный JSON: ' + txt);
           return;
         }
 
-        // нормализуем возможные форматы ответа в массив items
+        
         let items = [];
         if (Array.isArray(data)) items = data;
         else if (Array.isArray(data.result)) items = data.result;
@@ -163,12 +163,12 @@
         else if (data.reply && Array.isArray(data.reply)) items = data.reply;
         else if (data.message && Array.isArray(data.message)) items = data.message;
         else if (typeof data === 'object' && data !== null) {
-          // если пришёл единичный текст / объект — преобразуем в одну карточку
+          
           if (data.text || data.message || data.answer || data.replyText) {
             const txt = data.text || data.message || data.answer || data.replyText;
             items = [{ title: txt }];
           } else {
-            // fallback: сериализуем объект
+            
             items = [{ title: JSON.stringify(data) }];
           }
         }
@@ -186,7 +186,7 @@
       }
     }
 
-    // event handlers
+    
     startBtn.addEventListener('click', () => {
       const q = queryInput.value.trim();
       if (!q) return alert('Введите запрос');
@@ -198,7 +198,7 @@
       showBlock(inputBlock);
     });
 
-    // allow Enter key to submit
+    
     queryInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
